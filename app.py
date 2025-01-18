@@ -5,6 +5,7 @@ import pickle
 import random
 from dotenv import load_dotenv
 import os
+from flask import Flask  # Import Flask for the HTTP server
 
 # Load environment variables
 load_dotenv()
@@ -60,6 +61,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
+# Flask app to bind a port
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Telegram bot is running!"
+
 if __name__ == '__main__':
     print('Starting Bot...')
     app = Application.builder().token(TOKEN).build()
@@ -78,3 +86,7 @@ if __name__ == '__main__':
     # Poll the bot
     print('Polling...')
     app.run_polling(poll_interval=3)
+
+    # Start the Flask server
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
