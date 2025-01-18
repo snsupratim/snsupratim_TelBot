@@ -62,31 +62,34 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
 # Flask app to bind a port
-app = Flask(__name__)
+flask_app = Flask(__name__)  # Renamed Flask app to avoid conflicts
 
-@app.route("/")
+@flask_app.route("/")
 def home():
     return "Telegram bot is running!"
 
 if __name__ == '__main__':
     print('Starting Bot...')
-    app = Application.builder().token(TOKEN).build()
+
+    # Telegram Bot Setup
+    telegram_app = Application.builder().token(TOKEN).build()
 
     # Commands
-    app.add_handler(CommandHandler('start', start_command))
-    app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('custom', custom_command))
+    telegram_app.add_handler(CommandHandler('start', start_command))
+    telegram_app.add_handler(CommandHandler('help', help_command))
+    telegram_app.add_handler(CommandHandler('custom', custom_command))
 
     # Messages
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     # Errors
-    app.add_error_handler(error)
+    telegram_app.add_error_handler(error)
 
-    # Poll the bot
+    # Run Telegram Bot
     print('Polling...')
-    app.run_polling(poll_interval=3)
+    telegram_app.run_polling(poll_interval=3)
 
-     # Start the Flask server
-    port = int(os.getenv("PORT", 5000))  # Read PORT from .env or use default 5000
-    app.run(host='0.0.0.0', port=port)
+    # Start Flask Server
+    port = int(os.getenv("PORT", 5000))  # Get PORT from environment
+    print(f"Running Flask on port: {port}")
+    flask_app.run(host='0.0.0.0', port=port)  # Start Flask server
