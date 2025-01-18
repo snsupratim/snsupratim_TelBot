@@ -87,6 +87,6 @@ if __name__ == '__main__':
     print('Polling...')
     app.run_polling(poll_interval=3)
 
-    # Start the Flask server
-    port = int(os.environ.get("PORT", 5000))
+     # Start the Flask server
+    port = int(os.getenv("PORT", 5000))  # Read PORT from .env or use default 5000
     app.run(host='0.0.0.0', port=port)
