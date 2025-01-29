@@ -1,0 +1,77 @@
+<!-- templates/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Supratim Nag's Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+        }
+
+        .user-box {
+            display: inline-block;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 10px;
+            width: 200px;
+            background-color: white;
+            transition: box-shadow 0.3s;
+        }
+
+        .user-box:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .button {
+            background-color: #4CAF50;
+            /* Green */
+            color: white;
+            /* White text */
+            padding: 10px 15px;
+            /* Padding */
+            text-align: center;
+            /* Centered text */
+            text-decoration: none;
+            /* No underline */
+            display: inline-block;
+            /* Inline-block for button */
+            font-size: 16px;
+            /* Font size */
+            margin-top: 10px;
+            /* Margin */
+            border-radius: 5px;
+            /* Rounded corners */
+        }
+
+        .button:hover {
+            background-color: #45a049;
+            /* Darker green on hover */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome to Supratim Nag's Telegram Bot</h1>
+    <h2>Select a User to View Conversations</h2>
+    <div>
+        {% for user in users %}
+        <div class="user-box">
+            <h3>User ID: {{ user }}</h3>
+            <a href="{{ url_for('user_dashboard', user_id=user) }}" class="button">Get In</a>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>

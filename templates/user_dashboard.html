@@ -1,0 +1,101 @@
+<!-- templates/user_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Conversations Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            /* Green background */
+            color: white;
+            /* White text */
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+            /* Light grey for even rows */
+        }
+
+        tr:hover {
+            background-color: #ddd;
+            /* Darker grey on hover */
+        }
+
+        .back-button {
+            display: block;
+            width: 200px;
+            margin-top: 20px;
+            padding: 10px;
+            text-align: center;
+            background-color: #4CAF50;
+            /* Green */
+            color: white;
+            /* White text */
+            text-decoration: none;
+            /* No underline */
+            border-radius: 5px;
+            /* Rounded corners */
+        }
+
+        .back-button:hover {
+            background-color: #45a049;
+            /* Darker green on hover */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>User Conversations Dashboard (User ID {{ user_id }})</h1>
+    <table id="conversations-table">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Message</th>
+                <th>Timestamp</th> <!-- Add timestamp column -->
+            </tr>
+        </thead>
+        <tbody id="conversations-body">
+            {% for interaction in interactions %}
+            <tr>
+                <td>{{ interaction.username }}</td>
+                <td>{{ interaction.message }}</td>
+                <td>{{ interaction.timestamp }}</td> <!-- Display timestamp -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Back button to return to home page -->
+    <a href="/" class="back-button">Back to Home</a>
+
+</body>
+
+</html>

@@ -5,7 +5,8 @@ import pickle
 import random
 from dotenv import load_dotenv
 import os
-from flask import Flask  # Import Flask for the HTTP server
+from flask import Flask, render_template  # Import Flask for the HTTP server
+from pymongo import MongoClient  # Import MongoClient for MongoDB
 
 # Load environment variables
 load_dotenv()
@@ -13,10 +14,19 @@ load_dotenv()
 # Bot Token and Username
 TOKEN: Final = os.getenv('TELEGRAM_BOT_TOKEN')
 BOT_USERNAME: Final = os.getenv('TELEGRAM_BOT_USERNAME')
+MONGO_URI: Final = os.getenv('MONGO_URI')  # Get MongoDB URI from environment
+
+# Connect to MongoDB
+client = MongoClient(MONGO_URI)
+db = client['telegram_bot']  # Database name
+conversations_collection = db['conversations']  # Collection name for storing conversations
 
 # Load the saved model and vectorizer
 with open('snsupratim.pkl', 'rb') as model_file:
     vectorizer, clf, intents = pickle.load(model_file)
+
+# Store user interactions (in-memory for current session)
+user_interactions = []
 
 # Function to generate a chatbot response
 def chatbot(input_text):
@@ -45,6 +55,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print(f'User({update.message.chat.id}) in {message_type}: "{text}"')
 
+    # Log user interaction (in-memory)
+    user_interactions.append({
+        'user_id': update.message.chat.id,
+        'username': update.message.from_user.username,
+        'message': text,
+    })
+
+    # Store conversation in MongoDB
+    conversation_data = {
+        'user_id': update.message.chat.id,
+        'username': update.message.from_user.username,
+        'message': text,
+        'timestamp': update.message.date  # Store message timestamp
+    }
+    
+
     if message_type == 'group':
         if BOT_USERNAME in text:
             new_text: str = text.replace(BOT_USERNAME, '').strip()
@@ -56,17 +82,39 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print('Bot:', response)
     await update.message.reply_text(response)
+    conversations_collection.insert_one(conversation_data)  # Insert into MongoDB
 
 # Error handler
 async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
-# Flask app to bind a port
-flask_app = Flask(__name__)  # Renamed Flask app to avoid conflicts
+# Flask app to bind a port and provide a dashboard
+flask_app = Flask(__name__)
 
 @flask_app.route("/")
 def home():
-    return "Telegram bot is running!"
+    # Fetch unique user IDs from MongoDB
+    unique_users = conversations_collection.distinct('user_id')  # Get unique user IDs
+    return render_template('home.html', users=unique_users)  # Pass users to the home template
+
+@flask_app.route("/user/<int:user_id>")
+def user_dashboard(user_id):
+    # Fetch conversations for the specific user
+    conversations = list(conversations_collection.find({'user_id': user_id}))  # Get conversations for this user
+    for conversation in conversations:
+        conversation['_id'] = str(conversation['_id'])  # Convert ObjectId to string for JSON serialization
+    return render_template('user_dashboard.html', interactions=conversations, user_id=user_id)
+
+
+@flask_app.route("/dashboard")
+def dashboard():
+    # Fetch conversations from MongoDB
+    conversations = list(conversations_collection.find())  # Get all conversations from MongoDB
+    # Convert MongoDB documents to a more usable format (remove '_id' field)
+    for conversation in conversations:
+        conversation['_id'] = str(conversation['_id'])  # Convert ObjectId to string for JSON serialization
+    return render_template('dashboard.html', interactions=conversations)
+
 
 if __name__ == '__main__':
     print('Starting Bot...')
@@ -85,11 +133,18 @@ if __name__ == '__main__':
     # Errors
     telegram_app.add_error_handler(error)
 
-    # Run Telegram Bot
-    print('Polling...')
-    telegram_app.run_polling(poll_interval=3)
-
     # Start Flask Server
     port = int(os.getenv("PORT", 5000))  # Get PORT from environment
     print(f"Running Flask on port: {port}")
-    flask_app.run(host='0.0.0.0', port=port)  # Start Flask server
+
+    import threading
+
+    def run_flask():
+        flask_app.run(host='0.0.0.0', port=port)  # Start Flask server
+
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
+    print(f"Access your dashboard at: http://localhost:{port}/dashboard")  # Print dashboard link
+
+    telegram_app.run_polling(poll_interval=3)  # Run Telegram bot polling
