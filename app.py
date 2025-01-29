@@ -80,7 +80,7 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
 # Flask app to bind a port and provide a dashboard
-app = Flask(__name__)  # Change flask_app to app
+app = Flask(__name__)  # Name the Flask app as 'app'
 
 @app.route("/")
 def home():
@@ -108,29 +108,25 @@ if __name__ == '__main__':
     print('Starting Bot...')
 
     # Telegram Bot Setup
-    app = Application.builder().token(TOKEN).build()
+    telegram_app = Application.builder().token(TOKEN).build()
 
     # Commands and Messages Handlers Setup
-    app.add_handler(CommandHandler('start', start_command))
-    app.add_handler(CommandHandler('help', help_command))
-    app.add_handler(CommandHandler('custom', custom_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    telegram_app.add_handler(CommandHandler('start', start_command))
+    telegram_app.add_handler(CommandHandler('help', help_command))
+    telegram_app.add_handler(CommandHandler('custom', custom_command))
+    telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Error handling setup
-    app.add_error_handler(error)
+    telegram_app.add_error_handler(error)
 
-    # # Start Flask Server in a separate thread or process if needed
-    # port = int(os.getenv("PORT", 5000))  # Get PORT from environment variable
-    
-    # print(f"Running Flask on port: {port}")
+    import threading
 
-    # import threading
+    def run_flask():
+        port = int(os.getenv("PORT", 5000))  # Get PORT from environment variable
+        app.run(host='0.0.0.0', port=port)  # Start Flask server
 
-    # def run_flask():
-    #     app.run(host='0.0.0.0', port=port)  # Start Flask server
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
 
-    # flask_thread = threading.Thread(target=run_flask)
-    # flask_thread.start()
-
-    app.run_polling(poll_interval=3)  # Run Telegram bot polling
+    telegram_app.run_polling(poll_interval=3)  # Run Telegram bot polling
 
