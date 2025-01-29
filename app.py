@@ -108,29 +108,29 @@ if __name__ == '__main__':
     print('Starting Bot...')
 
     # Telegram Bot Setup
-    telegram_app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(TOKEN).build()
 
     # Commands and Messages Handlers Setup
-    telegram_app.add_handler(CommandHandler('start', start_command))
-    telegram_app.add_handler(CommandHandler('help', help_command))
-    telegram_app.add_handler(CommandHandler('custom', custom_command))
-    telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(CommandHandler('start', start_command))
+    app.add_handler(CommandHandler('help', help_command))
+    app.add_handler(CommandHandler('custom', custom_command))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     # Error handling setup
-    telegram_app.add_error_handler(error)
+    app.add_error_handler(error)
 
-    # Start Flask Server in a separate thread or process if needed
-    port = int(os.getenv("PORT", 5000))  # Get PORT from environment variable
+    # # Start Flask Server in a separate thread or process if needed
+    # port = int(os.getenv("PORT", 5000))  # Get PORT from environment variable
     
-    print(f"Running Flask on port: {port}")
+    # print(f"Running Flask on port: {port}")
 
-    import threading
+    # import threading
 
-    def run_flask():
-        app.run(host='0.0.0.0', port=port)  # Start Flask server
+    # def run_flask():
+    #     app.run(host='0.0.0.0', port=port)  # Start Flask server
 
-    flask_thread = threading.Thread(target=run_flask)
-    flask_thread.start()
+    # flask_thread = threading.Thread(target=run_flask)
+    # flask_thread.start()
 
-    telegram_app.run_polling(poll_interval=3)  # Run Telegram bot polling
+    app.run_polling(poll_interval=3)  # Run Telegram bot polling
 
