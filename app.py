@@ -80,15 +80,15 @@ async def error(update: Update, context: ContextTypes.DEFAULT_TYPE):
     print(f'Update {update} caused error {context.error}')
 
 # Flask app to bind a port and provide a dashboard
-flask_app = Flask(__name__)
+app = Flask(__name__)  # Change flask_app to app
 
-@flask_app.route("/")
+@app.route("/")
 def home():
     # Fetch unique user IDs from MongoDB
     unique_users = conversations_collection.distinct('user_id')  # Get unique user IDs
     return render_template('home.html', users=unique_users)  # Pass users to the home template
 
-@flask_app.route("/user/<int:user_id>")
+@app.route("/user/<int:user_id>")
 def user_dashboard(user_id):
     # Fetch conversations for the specific user
     conversations = list(conversations_collection.find({'user_id': user_id}))  # Get conversations for this user
@@ -96,7 +96,7 @@ def user_dashboard(user_id):
         conversation['_id'] = str(conversation['_id'])  # Convert ObjectId to string for JSON serialization
     return render_template('user_dashboard.html', interactions=conversations, user_id=user_id)
 
-@flask_app.route("/dashboard")
+@app.route("/dashboard")
 def dashboard():
     # Fetch conversations from MongoDB (this route can be removed if not needed)
     conversations = list(conversations_collection.find())  # Get all conversations from MongoDB
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     import threading
 
     def run_flask():
-        flask_app.run(host='0.0.0.0', port=port)  # Start Flask server
+        app.run(host='0.0.0.0', port=port)  # Start Flask server
 
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
