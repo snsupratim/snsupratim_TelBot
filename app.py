@@ -25,9 +25,6 @@ conversations_collection = db['conversations']  # Collection name for storing co
 with open('snsupratim.pkl', 'rb') as model_file:
     vectorizer, clf, intents = pickle.load(model_file)
 
-# Store user interactions (in-memory for current session)
-user_interactions = []
-
 # Function to generate a chatbot response
 def chatbot(input_text):
     input_text = vectorizer.transform([input_text])
@@ -55,13 +52,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print(f'User({update.message.chat.id}) in {message_type}: "{text}"')
 
-    # Log user interaction (in-memory)
-    user_interactions.append({
-        'user_id': update.message.chat.id,
-        'username': update.message.from_user.username,
-        'message': text,
-    })
-
     # Store conversation in MongoDB
     conversation_data = {
         'user_id': update.message.chat.id,
@@ -69,7 +59,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'message': text,
         'timestamp': update.message.date  # Store message timestamp
     }
-    
 
     if message_type == 'group':
         if BOT_USERNAME in text:
@@ -82,6 +71,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print('Bot:', response)
     await update.message.reply_text(response)
+    
+    # Insert into MongoDB after generating a response
     conversations_collection.insert_one(conversation_data)  # Insert into MongoDB
 
 # Error handler
@@ -105,16 +96,13 @@ def user_dashboard(user_id):
         conversation['_id'] = str(conversation['_id'])  # Convert ObjectId to string for JSON serialization
     return render_template('user_dashboard.html', interactions=conversations, user_id=user_id)
 
-
 @flask_app.route("/dashboard")
 def dashboard():
-    # Fetch conversations from MongoDB
+    # Fetch conversations from MongoDB (this route can be removed if not needed)
     conversations = list(conversations_collection.find())  # Get all conversations from MongoDB
-    # Convert MongoDB documents to a more usable format (remove '_id' field)
     for conversation in conversations:
         conversation['_id'] = str(conversation['_id'])  # Convert ObjectId to string for JSON serialization
     return render_template('dashboard.html', interactions=conversations)
-
 
 if __name__ == '__main__':
     print('Starting Bot...')
@@ -122,19 +110,18 @@ if __name__ == '__main__':
     # Telegram Bot Setup
     telegram_app = Application.builder().token(TOKEN).build()
 
-    # Commands
+    # Commands and Messages Handlers Setup
     telegram_app.add_handler(CommandHandler('start', start_command))
     telegram_app.add_handler(CommandHandler('help', help_command))
     telegram_app.add_handler(CommandHandler('custom', custom_command))
-
-    # Messages
     telegram_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Errors
+    
+    # Error handling setup
     telegram_app.add_error_handler(error)
 
-    # Start Flask Server
-    port = int(os.getenv("PORT", 5000))  # Get PORT from environment
+    # Start Flask Server in a separate thread or process if needed
+    port = int(os.getenv("PORT", 5000))  # Get PORT from environment variable
+    
     print(f"Running Flask on port: {port}")
 
     import threading
@@ -145,6 +132,5 @@ if __name__ == '__main__':
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
 
-    print(f"Access your dashboard at: http://localhost:{port}/dashboard")  # Print dashboard link
-
     telegram_app.run_polling(poll_interval=3)  # Run Telegram bot polling
+
